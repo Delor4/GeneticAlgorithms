@@ -7,21 +7,23 @@ class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     # POPULATION_COUNT # set to even number
-    INDIVIDUALS = 50
+    INDIVIDUALS = 20
     GENS = 8
-    WORST = 4
+    WORST = 2
     MUTATED_GENS = 2
     MATRIX_A = [
         [2, 1, -1, -3, -1, 1, 4, 4],
         [4, 1, 2, -1, 2, 1, 2, 2],
-        [3, 3, -3, 4, -1, 2, 1, 1],
+        [3, 3, -3, 4, -1, 2, 1, -4],
         [3, 2, 2, -1, 1, 3, -1, -1],
-        [5, 5, -3, 5, 4, 2, 3, 3],
-        [4, -2, 2, -2, -3, 3, 3, 3],
-        [3, 1, 0, -3, 3, -5, 3, 3],
+        [5, 5, -3, 5, 4, 2, 3, -1],
+        [4, -2, 2, -2, -3, 3, 3, -1],
+        [3, 1, 0, -3, 3, -5, 3, 1],
         [2, 1, 5, 2, -4, 3, 1, 1],
     ]
     MATRIX_B = [1, 2, 3, 4, 5, 6, 7, 8]
+
+    # result: -3,20	2,58	3,01	-1,05	1,01	0,54	4,63	-3,34
 
     def __init__(self):
         random.seed()
@@ -51,14 +53,19 @@ class GeneticSystem:
         return self._make_ind([self.randomize_gen() for i in range(gens)])
 
     def sort_pop(self):
-        self.population.sort(key=lambda ind: ind['adj_factor'])
+        try:
+            self.population.sort(key=lambda ind: ind['adj_factor'])
+        except:
+            print(self.population)
 
     def remove_worst(self, removed=WORST):
         self.population = self.population[:-removed]
 
     def add_missing(self):
+        # self.population.extend([self._make_ind(self.population[i]['gens']) for i in range(self.INDIVIDUALS - len(self.population))])
         while len(self.population) < self.INDIVIDUALS:
             self.population.append(self.make_individual())
+        # self.population.extend(self.population[self.INDIVIDUALS - len(self.population)])
 
     def cross_ind(self, i1, i2):
         half = int(len(i1['gens']) / 2)
@@ -96,10 +103,16 @@ class GeneticSystem:
         self.add_missing()
         self.sort_pop()
 
+    def overall_adj_factor(self):
+        s = sum([i['adj_factor'] for i in pop.population])
+        return s
+
 
 if __name__ == "__main__":
     pop = GeneticSystem()
     print("Adjustment factor on start: {}".format(pop.population[0]['adj_factor']))
-    for i in range(1500):
+    for i in range(15000):
         pop.calculate_new_population()
-        print("Adjustment factor on {} generation: {}".format(i, pop.population[0]['adj_factor']))
+        print("Adjustment factor on {} generation: {:.2f}, all: {:.2f}".format(i, pop.population[0]['adj_factor'],
+                                                                               pop.overall_adj_factor()),
+              pop.population[0]['gens'])
