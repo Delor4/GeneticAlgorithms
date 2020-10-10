@@ -1,13 +1,17 @@
-# Algorytmy genetyczne
-# Sebastian Kucharczyk
+# Genetic algorithms
+# by Sebastian Kucharczyk
+import math
 import random
+
+import matplotlib.pyplot as plt
+from drawnow import drawnow
 
 
 class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     # POPULATION_COUNT # set to even number
-    INDIVIDUALS = 20
+    INDIVIDUALS = 30
     GENS = 8
     WORST = 2
     MUTATED_GENS = 2
@@ -42,7 +46,7 @@ class GeneticSystem:
     def _make_ind(self, gens):
         return {
             'gens': gens,
-            'adj_factor': self.calculate_goal_func(gens)
+            'fitness': self.calculate_goal_func(gens)
         }
 
     @staticmethod
@@ -54,7 +58,7 @@ class GeneticSystem:
 
     def sort_pop(self):
         try:
-            self.population.sort(key=lambda ind: ind['adj_factor'])
+            self.population.sort(key=lambda ind: ind['fitness'])
         except:
             print(self.population)
 
@@ -80,7 +84,7 @@ class GeneticSystem:
 
     def cross_pop(self):
         new_pop = []
-        for i in range(0, len(self.population), 2):
+        for i in range(0, int(len(self.population) / 10), 2):
             i1, i2 = self.cross_ind(self.population[i], self.population[i + 1])
             new_pop.extend([i1, i2])
 
@@ -96,23 +100,53 @@ class GeneticSystem:
             index = random.randrange(len(self.population))
             self.population[index] = self.mutate_ind(self.population[index])
 
-    def calculate_new_population(self):
+    def calculate_new_generation(self):
         self.remove_worst()
         self.cross_pop()
         self.mutate_pop()
         self.add_missing()
         self.sort_pop()
 
-    def overall_adj_factor(self):
-        s = sum([i['adj_factor'] for i in pop.population])
+    def best_fitness(self):
+        return self.population[0]['fitness']
+
+    def overall_fitness(self):
+        s = sum([i['fitness'] for i in self.population])
         return s
+
+
+def make_fig():
+    plt.plot(x, y)
+    plt.title('Alg. genetyczny')
+    plt.xlabel("Pokolenie")
+    plt.ylabel("Wsp. dostosowania")
+    # plt.annotate('początek', xy=(0, 0), xytext=(0.5, -0.5),
+    # arrowprops=dict(facecolor='black', shrink=0.05),
+    # )
+    # plt.annotate('koniec', xy=(x[-1], y[-1]), xytext=(x[-1]*.8, 0.5),
+    # arrowprops=dict(facecolor='black', shrink=0.05),
+    # )
+    plt.legend(['f(x)=wsp. dost', 'f(x)=sin(x)^2'])
 
 
 if __name__ == "__main__":
     pop = GeneticSystem()
-    print("Adjustment factor on start: {}".format(pop.population[0]['adj_factor']))
-    for i in range(15000):
-        pop.calculate_new_population()
-        print("Adjustment factor on {} generation: {:.2f}, all: {:.2f}".format(i, pop.population[0]['adj_factor'],
-                                                                               pop.overall_adj_factor()),
-              pop.population[0]['gens'])
+    plt.ion()  # enable interactivity
+    fig = plt.figure()  # make a figure
+    x = []
+    y = []
+
+    print("Adjustment factor on start: {}".format(pop.best_fitness()))
+    for i in range(1, 100000):
+        pop.calculate_new_generation()
+        if (i % 5 ** int(math.log(i, 5)) == 0):
+            print("Adjustment factor on {} generation: {:.2f}, all: {:.2f}".format(i,
+                                                                                   pop.best_fitness(),
+                                                                                   pop.overall_fitness()),
+                  pop.population[0]['gens'])
+        if pop.best_fitness() < 0.5:
+            break
+        x.append(i)
+        y.append(pop.best_fitness())
+        if i % 100 == 0:
+            drawnow(make_fig)
