@@ -15,32 +15,23 @@ class GeneticSystem:
     GENS = 8
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
-    # POPULATION_COUNT # set to even number
     INDIVIDUALS = 1000
     WORST = int(0.1 * INDIVIDUALS)
     CROSSED = int(0.99 * (INDIVIDUALS - WORST))
     MUTATED_GENS = int(0.01 * INDIVIDUALS)
     MATRIX_A = [
-        [3, -3, 3, -4, 2, -1, 3, 1],
-        [-3, 1, 0, 2, 3, 1, 3, -4],
-        [4, -1, -1, -4, 1, -2, 4, -2],
-        [0, -3, 1, 0, 3, 0, 2, 1],
-        [-4, -3, 1, -2, 4, 1, 3, 4],
-        [4, -3, 2, 4, -4, -4, 0, -3],
-        [1, -4, 1, 1, 3, 2, 1, -1],
-        [3, -3, 3, -4, 1, -1, 3, 1],
+        [-3,  3,  3, -4,  2, -1, 3,  1],
+        [ 1, -3,  0,  2,  3,  1, 3, -4],
+        [-1,  4, -1, -4,  1, -2, 4, -2],
+        [-3,  0,  1,  0,  3,  0, 2,  1],
+        [-3, -4,  1, -2,  4,  1, 3,  4],
+        [-3,  4,  2,  4, -4, -4, 0, -3],
+        [-4,  1,  1,  1,  3,  2, 1, -1],
+        [-3,  3,  3, -4,  1, -1, 3,  1],
     ]
-    MATRIX_B = [-34,
-                -19,
-                -26,
-                -21,
-                -25,
-                -19,
-                -18,
-                -33, ]
+    MATRIX_B = [-34, -19, -26, -21, -25, -19, -18, -33, ]
 
-    # result: -3,20	2,58	3,01	-1,05	1,01	0,54	4,63	-3,34
-    # 2	4	-3	2	-1	3	-3	3
+    # result: [4,	2	,-3,	2,	-1,	3,	-3,	3,]
     def __init__(self):
         random.seed()
         self.population = self.make_population()
@@ -182,9 +173,9 @@ class Fig:
             self.x = self.x[-self.MAX_TO_SHOW:]
             self.y = self.y[-self.MAX_TO_SHOW:]
             self.y2 = self.y2[-self.MAX_TO_SHOW:]
-            drawnow(self.make_fig)
+            drawnow(self.draw_fig)
 
-    def make_fig(self):
+    def draw_fig(self):
         plt.plot(self.x, self.y, '', self.x, self.y2)
         plt.title('Alg. genetyczny')
         plt.xlabel("Pokolenie")
