@@ -15,7 +15,7 @@ class GeneticSystem:
     GENS = 8
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
-    INDIVIDUALS = 1000
+    INDIVIDUALS = 100
     WORST = int(0.1 * INDIVIDUALS)
     CROSSED = int(0.99 * (INDIVIDUALS - WORST))
     MUTATED_GENS = int(0.01 * INDIVIDUALS)
@@ -44,9 +44,15 @@ class GeneticSystem:
         return sum(abs_b_minus_br)
 
     def make_population(self, individuals=INDIVIDUALS):
+        """
+        Create initial population.
+        """
         return [self.make_random_individual() for _ in range(individuals)]
 
     def _make_ind(self, gens):
+        """
+        Helper. Returns individual with given gens and fitness factor.
+        """
         return {
             'gens': gens,
             'fitness': self.calculate_goal_func(gens)
@@ -54,26 +60,44 @@ class GeneticSystem:
 
     @staticmethod
     def randomize_gen(min_val=GEN_MIN_VAL, max_val=GEN_MAX_VAL):
+        """
+        Return randomized gen.
+        """
         return int(random.randrange(min_val * 10, max_val * 10) / 10)
 
     def make_random_individual(self, gens=GENS):
+        """
+        Return random individual.
+        """
         return self._make_ind([self.randomize_gen() for _ in range(gens)])
 
     def sort_pop(self):
+        """
+        Sort population by fitness factor.
+        """
         self.population.sort(key=lambda ind: ind['fitness'])
 
-    def remove_worst(self, removed=WORST):
+    def selection(self, removed=WORST):
+        """
+        Remove individuals with worst fitness factor. (need sorted population)
+        """
         if removed > 0:
             self.population = self.population[:-removed]
 
-    def add_missing(self):
+    def populate(self):
+        """
+        Populate collection with random individuals. (up to population size)
+        """
         # self.population.extend([self._make_ind(self.population[i]['gens'])
         #   for _ in range(self.INDIVIDUALS - len(self.population))])
         while len(self.population) < self.INDIVIDUALS:
             self.population.append(self.make_random_individual())
         # self.population.extend(self.population[self.INDIVIDUALS - len(self.population)])
 
-    def cross_ind(self, i1, i2):
+    def cross_sp_ind(self, i1, i2):
+        """
+        Single-point crossover. Fixed crossover point (in half of genome).
+        """
         half = int(len(i1['gens']) / 2)
 
         gen1 = i1['gens'][:half]
@@ -84,50 +108,92 @@ class GeneticSystem:
 
         return self._make_ind(gen1), self._make_ind(gen2)
 
+    def cross_rp_ind(self, i1, i2):
+        """
+        Single-point crossover. Crossover point selected randomly.
+        """
+        half = int(random.randrange(1, self.GENS-1))
+
+        gen1 = i1['gens'][:half]
+        gen1.extend(i2['gens'][half:])
+
+        gen2 = i2['gens'][:half]
+        gen2.extend(i1['gens'][half:])
+
+        return self._make_ind(gen1), self._make_ind(gen2)
+
     def cross_pop(self):
+        """
+        Crossover individuals in population.
+        Max. CROSSED individuals grouped in pairs.
+        """
         for _i in range(0, self.CROSSED & ~1, 2):
-            self.population[_i], self.population[_i + 1] = self.cross_ind(self.population[_i], self.population[_i + 1])
+            self.population[_i], self.population[_i + 1] = self.cross_rp_ind(self.population[_i], self.population[_i + 1])
 
     def mutate_ind(self, ind):
+        """
+        Mutate random gen in given individual.
+        """
         ind['gens'][random.randrange(len(ind))] = self.randomize_gen()
         return self._make_ind(ind['gens'])
 
     def mutate_pop(self, mutated_gens=MUTATED_GENS):
+        """
+        Mutate individuals in population.
+        """
         for _ in range(mutated_gens):
             index = random.randrange(len(self.population))
             self.population[index] = self.mutate_ind(self.population[index])
 
     @staticmethod
     def show_ind(msg, ind):
+        """
+        Helper method. For debug.
+        """
         print(msg, ind)
 
     def debug(self, msg):
+        """
+        Helper method. For debug. :)
+        """
         if self.SHOW_DEBUG:
             print(msg)
             for _i in range(len(self.population)):
                 self.show_ind(_i, self.population[_i])
 
     def calculate_new_generation(self):
-        self.remove_worst()
+        """
+        Calculate new iteration of genetic algorithm.
+        """
+        self.selection()
         self.debug("after remove")
         self.cross_pop()
         self.debug("After crossing:")
         self.mutate_pop()
         self.debug("After mutate:")
-        self.add_missing()
+        self.populate()
         self.debug("After add missing:")
         self.sort_pop()
         self.debug("After sort:")
 
     def best_fitness(self):
+        """
+        Returns best fitness factor from sorted population.
+        """
         return self.population[0]['fitness']
 
     def overall_fitness(self):
+        """
+        Returns accumulated fitness factor of all individuals in population.
+        """
         s = sum([_i['fitness'] for _i in self.population])
         return s
 
 
 class Fig:
+    """
+    Class to store and show statistics.
+    """
     MAX_TO_SHOW = 2000
 
     def __init__(self):
@@ -158,6 +224,9 @@ class Fig:
         self.y2.append(self.y_sum / generation)
 
     def check_newbest(self):
+        """
+        Save and show individual if actual fitness factor is better than the past.
+        """
         best_fit = self.y[-1]
         if self.y_min > best_fit:
             self.y_min = best_fit
@@ -198,7 +267,7 @@ if __name__ == "__main__":
                   "avg.:", fig.get_avg()
                   )
         if pop.best_fitness() < 0.5:
-            print("Find: ", pop.population[0], 'after:', i)
+            print("Find: ", pop.population[0], 'after:', i, "iterations")
             break
 
         fig.check_newbest()
