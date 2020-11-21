@@ -16,18 +16,19 @@ class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     INDIVIDUALS = 100
-    WORST = int(0.1 * INDIVIDUALS)
-    CROSSED = int(0.99 * (INDIVIDUALS - WORST))
+    WORST = int(0.05 * INDIVIDUALS)
+    CROSSED = int(0.4 * (INDIVIDUALS - WORST))
     MUTATED_GENS = int(0.01 * INDIVIDUALS)
+    TIME_OF_LIFE = 50
     MATRIX_A = [
-        [-3,  3,  3, -4,  2, -1, 3,  1],
-        [ 1, -3,  0,  2,  3,  1, 3, -4],
-        [-1,  4, -1, -4,  1, -2, 4, -2],
-        [-3,  0,  1,  0,  3,  0, 2,  1],
-        [-3, -4,  1, -2,  4,  1, 3,  4],
-        [-3,  4,  2,  4, -4, -4, 0, -3],
-        [-4,  1,  1,  1,  3,  2, 1, -1],
-        [-3,  3,  3, -4,  1, -1, 3,  1],
+        [-3, 3, 3, -4, 2, -1, 3, 1],
+        [1, -3, 0, 2, 3, 1, 3, -4],
+        [-1, 4, -1, -4, 1, -2, 4, -2],
+        [-3, 0, 1, 0, 3, 0, 2, 1],
+        [-3, -4, 1, -2, 4, 1, 3, 4],
+        [-3, 4, 2, 4, -4, -4, 0, -3],
+        [-4, 1, 1, 1, 3, 2, 1, -1],
+        [-3, 3, 3, -4, 1, -1, 3, 1],
     ]
     MATRIX_B = [-34, -19, -26, -21, -25, -19, -18, -33, ]
 
@@ -36,7 +37,6 @@ class GeneticSystem:
         random.seed()
         self.population = self.make_population()
         self.sort_pop()
-        # print(len(self.population))
 
     def calculate_goal_func(self, ind):
         b = [sum([a * gen for gen, a in zip(ind, line)]) for line in self.MATRIX_A]
@@ -49,13 +49,14 @@ class GeneticSystem:
         """
         return [self.make_random_individual() for _ in range(individuals)]
 
-    def _make_ind(self, gens):
+    def _make_ind(self, gens, tol=TIME_OF_LIFE):
         """
         Helper. Returns individual with given gens and fitness factor.
         """
         return {
             'gens': gens,
-            'fitness': self.calculate_goal_func(gens)
+            'fitness': self.calculate_goal_func(gens),
+            'tol': tol
         }
 
     @staticmethod
@@ -63,7 +64,7 @@ class GeneticSystem:
         """
         Return randomized gen.
         """
-        return int(random.randrange(min_val * 10, max_val * 10) / 10)
+        return random.randrange(min_val * 100, max_val * 100) / 100
 
     def make_random_individual(self, gens=GENS):
         """
@@ -112,7 +113,7 @@ class GeneticSystem:
         """
         Single-point crossover. Crossover point selected randomly.
         """
-        half = int(random.randrange(1, self.GENS-1))
+        half = int(random.randrange(1, self.GENS - 1))
 
         gen1 = i1['gens'][:half]
         gen1.extend(i2['gens'][half:])
@@ -128,7 +129,20 @@ class GeneticSystem:
         Max. CROSSED individuals grouped in pairs.
         """
         for _i in range(0, self.CROSSED & ~1, 2):
-            self.population[_i], self.population[_i + 1] = self.cross_rp_ind(self.population[_i], self.population[_i + 1])
+            self.population[_i], self.population[_i + 1] = self.cross_rp_ind(self.population[_i],
+                                                                             self.population[_i + 1])
+
+    def check_tol(self):
+        """
+            Reduce time of life and remove old individuals.
+        """
+        n_pop = []
+        for _i in self.population:
+            _i['tol'] = _i['tol'] - 1
+            if _i['tol'] >= 0:
+                n_pop.append(_i)
+
+        self.population = n_pop
 
     def mutate_ind(self, ind):
         """
@@ -165,7 +179,8 @@ class GeneticSystem:
         """
         Calculate new iteration of genetic algorithm.
         """
-        self.selection()
+        #self.selection()
+        self.check_tol()
         self.debug("after remove")
         self.cross_pop()
         self.debug("After crossing:")
