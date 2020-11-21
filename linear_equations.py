@@ -17,7 +17,7 @@ class GeneticSystem:
     GEN_MAX_VAL = 5
     INDIVIDUALS = 100
     WORST = int(0.05 * INDIVIDUALS)
-    CROSSED = int(0.4 * (INDIVIDUALS - WORST))
+    CROSSED = int(0.99 * (INDIVIDUALS - WORST))
     MUTATED_GENS = int(0.01 * INDIVIDUALS)
     TIME_OF_LIFE = 50
     MATRIX_A = [
@@ -123,13 +123,25 @@ class GeneticSystem:
 
         return self._make_ind(gen1), self._make_ind(gen2)
 
+    def cross_dp_ind(self, i1, i2):
+        """
+        Swap random gen between two individuals.
+        """
+        i_gen = int(random.randrange(0, self.GENS))
+
+        tmp = i1['gens'][i_gen]
+        i1['gens'][i_gen] = i2['gens'][i_gen]
+        i2['gens'][i_gen] = tmp
+
+        return self._make_ind(i1['gens']), self._make_ind(i2['gens'])
+
     def cross_pop(self):
         """
         Crossover individuals in population.
         Max. CROSSED individuals grouped in pairs.
         """
         for _i in range(0, self.CROSSED & ~1, 2):
-            self.population[_i], self.population[_i + 1] = self.cross_rp_ind(self.population[_i],
+            self.population[_i], self.population[_i + 1] = self.cross_dp_ind(self.population[_i],
                                                                              self.population[_i + 1])
 
     def check_tol(self):
@@ -179,8 +191,8 @@ class GeneticSystem:
         """
         Calculate new iteration of genetic algorithm.
         """
-        #self.selection()
-        self.check_tol()
+        self.selection()
+        #self.check_tol()
         self.debug("after remove")
         self.cross_pop()
         self.debug("After crossing:")
