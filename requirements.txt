@@ -1,0 +1,15 @@
+certifi==2020.6.20
+cx-Freeze==6.4.2
+cycler==0.10.0
+drawnow==0.72.5
+idna==3.0
+importlib-metadata==3.3.0
+kiwisolver==1.2.0
+matplotlib==3.3.2
+numpy==1.19.2
+Pillow==7.2.0
+pyparsing==2.4.7
+python-dateutil==2.8.1
+six==1.15.0
+typing-extensions==3.7.4.3
+zipp==3.4.0

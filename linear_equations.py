@@ -1,9 +1,10 @@
 import math
 import random
+import time
 
 import matplotlib.pyplot as plt
 from drawnow import drawnow
-
+# Population: 100 , removed on selection:  2 , crossed:  92 , mutated:  1
 
 class GeneticSystem:
     """
@@ -16,9 +17,9 @@ class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     INDIVIDUALS = 100
-    WORST = int(0.05 * INDIVIDUALS)
-    CROSSED = int(0.99 * (INDIVIDUALS - WORST))
-    MUTATED_GENS = int(0.01 * INDIVIDUALS)
+    WORST = 4 #int(0.05 * INDIVIDUALS)
+    CROSSED = 94#int(0.90 * (INDIVIDUALS - WORST))
+    MUTATED_GENS = 0#int(0.001 * INDIVIDUALS)
     TIME_OF_LIFE = 50
     MATRIX_A = [
         [-3, 3, 3, -4, 2, -1, 3, 1],
@@ -31,6 +32,7 @@ class GeneticSystem:
         [-3, 3, 3, -4, 1, -1, 3, 1],
     ]
     MATRIX_B = [-34, -19, -26, -21, -25, -19, -18, -33, ]
+    SIMULATED_ANNEALING_ITERATIONS = 10
 
     # result: [4,	2	,-3,	2,	-1,	3,	-3,	3,]
     def __init__(self):
@@ -192,7 +194,7 @@ class GeneticSystem:
         Calculate new iteration of genetic algorithm.
         """
         self.selection()
-        #self.check_tol()
+        # self.check_tol()
         self.debug("after remove")
         self.cross_pop()
         self.debug("After crossing:")
@@ -201,6 +203,7 @@ class GeneticSystem:
         self.populate()
         self.debug("After add missing:")
         self.sort_pop()
+        # self.simulated_annealing(self.population[0]['fitness']/10)
         self.debug("After sort:")
 
     def best_fitness(self):
@@ -216,14 +219,36 @@ class GeneticSystem:
         s = sum([_i['fitness'] for _i in self.population])
         return s
 
+    def simulated_annealing_condition(self, f1, f2, c):
+        out = math.exp(-(f1 - f2) / c)
+        if random.random() < out:
+            return True
+        return False
+
+    def simulated_annealing(self, temp, iter=SIMULATED_ANNEALING_ITERATIONS):
+        for i in range(iter):
+            p = self.population[0]
+            p_gens = p['gens'].copy()
+            index = random.randrange(len(p_gens))
+            p_gens[index] += self.randomize_gen() / 100
+            p_prim = self._make_ind(p_gens)
+            if p['fitness'] < p_prim['fitness']:
+                self.population[0] = p_prim
+                continue
+            else:
+                if self.simulated_annealing_condition(p['fitness'], p_prim['fitness'], temp):
+                    self.population[0] = p_prim
+
 
 class Fig:
     """
     Class to store and show statistics.
     """
     MAX_TO_SHOW = 2000
+    REDRAW_STEP = 250
 
     def __init__(self):
+        self.plt = plt
         plt.ion()  # enable interactivity
         self.fig = plt.figure()  # make a figure
 
@@ -265,7 +290,7 @@ class Fig:
 
     def show_fig(self):
 
-        if self.actual_generation % 100 == 0:
+        if self.actual_generation % self.REDRAW_STEP == 0:
             self.x = self.x[-self.MAX_TO_SHOW:]
             self.y = self.y[-self.MAX_TO_SHOW:]
             self.y2 = self.y2[-self.MAX_TO_SHOW:]
@@ -281,18 +306,26 @@ class Fig:
 
 if __name__ == "__main__":
     pop = GeneticSystem()
+    print("Population:", pop.INDIVIDUALS,
+          ', removed on selection: ', pop.WORST,
+          ', crossed: ', pop.CROSSED,
+          ', mutated: ', pop.MUTATED_GENS,
+          )
+    stored_time = time.time()
     fig = Fig()
     print("Adjustment factor on start: {}".format(pop.best_fitness()))
     for i in range(1, pop.GENERATIONS):
         pop.calculate_new_generation()
         fig.store_results(i, pop.population[0])
-        if i % 10 ** int(math.log(i, 10)) == 0:
+        if i % 10 ** int(math.log(i, 10)) == 0 or stored_time > (time.time() * 60):
+            stored_time = time.time()
             print("Adjustment factor on {} generation: {:.2f}, all: {:.2f}".format(i,
                                                                                    pop.best_fitness(),
                                                                                    pop.overall_fitness()),
                   pop.population[0]['gens'],
-                  "avg.:", fig.get_avg()
+                  "avg.: {:.3f}".format(fig.get_avg())
                   )
+
         if pop.best_fitness() < 0.5:
             print("Find: ", pop.population[0], 'after:', i, "iterations")
             break
