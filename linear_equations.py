@@ -4,7 +4,46 @@ import time
 
 import matplotlib.pyplot as plt
 from drawnow import drawnow
+
 # Population: 100 , removed on selection:  2 , crossed:  92 , mutated:  1
+
+MATRIX_A = [
+    [-3, 3, 3, -4, 2, -1, 3, 1],
+    [1, -3, 0, 2, 3, 1, 3, -4],
+    [-1, 4, -1, -4, 1, -2, 4, -2],
+    [-3, 0, 1, 0, 3, 0, 2, 1],
+    [-3, -4, 1, -2, 4, 1, 3, 4],
+    [-3, 4, 2, 4, -4, -4, 0, -3],
+    [-4, 1, 1, 1, 3, 2, 1, -1],
+    [-3, 3, 3, -4, 1, -1, 3, 1],
+]
+
+MATRIX_B = [-34, -19, -26, -21, -25, -19, -18, -33, ]
+
+TIME_OF_LIFE = 50
+
+
+def calculate_goal_func(gens):
+    b = [sum([a * gen for gen, a in zip(gens, line)]) for line in MATRIX_A]
+    abs_b_minus_br = [abs(br - b) for b, br in zip(b, MATRIX_B)]
+    return sum(abs_b_minus_br)
+
+
+class Individual:
+    def __init__(self, gens, tol=TIME_OF_LIFE):
+        self.gens = gens
+        self.fitness = calculate_goal_func(gens)
+        self.tol = tol
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __str__(self):
+        return "({}, fit: {:.3f})".format(self.gens, self.fitness)
+
+    def __len__(self):
+        return len(self.gens)
+
 
 class GeneticSystem:
     """
@@ -17,21 +56,10 @@ class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     INDIVIDUALS = 100
-    WORST = 4 #int(0.05 * INDIVIDUALS)
-    CROSSED = 94#int(0.90 * (INDIVIDUALS - WORST))
-    MUTATED_GENS = 0#int(0.001 * INDIVIDUALS)
-    TIME_OF_LIFE = 50
-    MATRIX_A = [
-        [-3, 3, 3, -4, 2, -1, 3, 1],
-        [1, -3, 0, 2, 3, 1, 3, -4],
-        [-1, 4, -1, -4, 1, -2, 4, -2],
-        [-3, 0, 1, 0, 3, 0, 2, 1],
-        [-3, -4, 1, -2, 4, 1, 3, 4],
-        [-3, 4, 2, 4, -4, -4, 0, -3],
-        [-4, 1, 1, 1, 3, 2, 1, -1],
-        [-3, 3, 3, -4, 1, -1, 3, 1],
-    ]
-    MATRIX_B = [-34, -19, -26, -21, -25, -19, -18, -33, ]
+    WORST = 4  # int(0.05 * INDIVIDUALS)
+    CROSSED = 94  # int(0.90 * (INDIVIDUALS - WORST))
+    MUTATED_GENS = 0  # int(0.001 * INDIVIDUALS)
+
     SIMULATED_ANNEALING_ITERATIONS = 10
 
     # result: [4,	2	,-3,	2,	-1,	3,	-3,	3,]
@@ -40,26 +68,11 @@ class GeneticSystem:
         self.population = self.make_population()
         self.sort_pop()
 
-    def calculate_goal_func(self, ind):
-        b = [sum([a * gen for gen, a in zip(ind, line)]) for line in self.MATRIX_A]
-        abs_b_minus_br = [abs(br - b) for b, br in zip(b, self.MATRIX_B)]
-        return sum(abs_b_minus_br)
-
     def make_population(self, individuals=INDIVIDUALS):
         """
         Create initial population.
         """
         return [self.make_random_individual() for _ in range(individuals)]
-
-    def _make_ind(self, gens, tol=TIME_OF_LIFE):
-        """
-        Helper. Returns individual with given gens and fitness factor.
-        """
-        return {
-            'gens': gens,
-            'fitness': self.calculate_goal_func(gens),
-            'tol': tol
-        }
 
     @staticmethod
     def randomize_gen(min_val=GEN_MIN_VAL, max_val=GEN_MAX_VAL):
@@ -72,7 +85,7 @@ class GeneticSystem:
         """
         Return random individual.
         """
-        return self._make_ind([self.randomize_gen() for _ in range(gens)])
+        return Individual([self.randomize_gen() for _ in range(gens)])
 
     def sort_pop(self):
         """
@@ -109,7 +122,7 @@ class GeneticSystem:
         gen2 = i2['gens'][:half]
         gen2.extend(i1['gens'][half:])
 
-        return self._make_ind(gen1), self._make_ind(gen2)
+        return Individual(gen1), Individual(gen2)
 
     def cross_rp_ind(self, i1, i2):
         """
@@ -123,7 +136,7 @@ class GeneticSystem:
         gen2 = i2['gens'][:half]
         gen2.extend(i1['gens'][half:])
 
-        return self._make_ind(gen1), self._make_ind(gen2)
+        return Individual(gen1), Individual(gen2)
 
     def cross_dp_ind(self, i1, i2):
         """
@@ -135,7 +148,7 @@ class GeneticSystem:
         i1['gens'][i_gen] = i2['gens'][i_gen]
         i2['gens'][i_gen] = tmp
 
-        return self._make_ind(i1['gens']), self._make_ind(i2['gens'])
+        return Individual(i1['gens']), Individual(i2['gens'])
 
     def cross_pop(self):
         """
@@ -163,7 +176,7 @@ class GeneticSystem:
         Mutate random gen in given individual.
         """
         ind['gens'][random.randrange(len(ind))] = self.randomize_gen()
-        return self._make_ind(ind['gens'])
+        return Individual(ind['gens'])
 
     def mutate_pop(self, mutated_gens=MUTATED_GENS):
         """
@@ -231,7 +244,7 @@ class GeneticSystem:
             p_gens = p['gens'].copy()
             index = random.randrange(len(p_gens))
             p_gens[index] += self.randomize_gen() / 100
-            p_prim = self._make_ind(p_gens)
+            p_prim = Individual(p_gens)
             if p['fitness'] < p_prim['fitness']:
                 self.population[0] = p_prim
                 continue
