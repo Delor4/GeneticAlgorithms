@@ -5,8 +5,6 @@ import time
 import matplotlib.pyplot as plt
 from drawnow import drawnow
 
-# Population: 100 , removed on selection:  2 , crossed:  92 , mutated:  1
-
 MATRIX_A = [
     [-3, 3, 3, -4, 2, -1, 3, 1],
     [1, -3, 0, 2, 3, 1, 3, -4],
@@ -56,13 +54,13 @@ class GeneticSystem:
     GEN_MIN_VAL = -5
     GEN_MAX_VAL = 5
     INDIVIDUALS = 100
-    WORST = 4  # int(0.05 * INDIVIDUALS)
-    CROSSED = 94  # int(0.90 * (INDIVIDUALS - WORST))
+    WORST = 14  # int(0.05 * INDIVIDUALS)
+    CROSSED = 84  # int(0.90 * (INDIVIDUALS - WORST))
     MUTATED_GENS = 0  # int(0.001 * INDIVIDUALS)
 
     SIMULATED_ANNEALING_ITERATIONS = 10
 
-    # result: [4,	2	,-3,	2,	-1,	3,	-3,	3,]
+    # expected result: [4,	2	,-3,	2,	-1,	3,	-3,	3,]
     def __init__(self):
         random.seed()
         self.population = self.make_population()
@@ -175,7 +173,7 @@ class GeneticSystem:
         """
         Mutate random gen in given individual.
         """
-        ind['gens'][random.randrange(len(ind))] = self.randomize_gen()
+        ind['gens'][random.randrange(len(ind['gens']))] = self.randomize_gen()
         return Individual(ind['gens'])
 
     def mutate_pop(self, mutated_gens=MUTATED_GENS):
